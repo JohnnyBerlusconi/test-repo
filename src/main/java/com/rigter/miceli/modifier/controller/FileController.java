@@ -20,10 +20,9 @@ public class FileController {
     }
 
     @PostMapping("/import")
-    public void mapReapExcelDatatoFile(@RequestParam("file") MultipartFile[] reapExcelDataFile) throws IOException {
+    public void mapReapExcelDatatoFile(@RequestParam("file") MultipartFile reapExcelDataFile) throws IOException {
         XSSFWorkbook workbook = new XSSFWorkbook(reapExcelDataFile.getInputStream());
         XSSFSheet worksheet = workbook.getSheetAt(0);
-        workbook.getNumberOfSheets()
 
         for(int i=0;i<worksheet.getPhysicalNumberOfRows() ;i++) {
 
