@@ -20,6 +20,7 @@ public class MyFileChangeListener implements FileChangeListener {
     public void onChange(Set<ChangedFiles> changeSet) {
         for(ChangedFiles cfiles : changeSet) {
             for(ChangedFile cfile: cfiles.getFiles()) {
+                //TODO implement business logic
                 if( /* (cfile.getType().equals(Type.MODIFY)
                      || cfiasdasfffgfgdasddsle.getType().equals(Type.ADD)
                      || cfile.getType().equals(Type.DELETE) ) && */ !isLocked(cfile.getFile().toPath())) {
