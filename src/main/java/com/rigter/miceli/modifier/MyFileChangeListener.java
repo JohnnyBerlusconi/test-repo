@@ -6,7 +6,7 @@ import org.springframework.boot.devtools.filewatch.ChangedFiles;
 import org.springframework.boot.devtools.filewatch.FileChangeListener;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
+import java.io.*;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.file.Path;
@@ -21,11 +21,24 @@ public class MyFileChangeListener implements FileChangeListener {
         for(ChangedFiles cfiles : changeSet) {
             for(ChangedFile cfile: cfiles.getFiles()) {
                 //TODO implement business logic
-                if( /* (cfile.getType().equals(Type.MODIFY)
-                     || cfiasdasfffgfgdasddsle.getType().equals(Type.ADD)
-                     || cfile.getType().equals(Type.DELETE) ) && */ !isLocked(cfile.getFile().toPath())) {
-                    System.out.println("Operation: " + cfile.getType()
-                            + " On file: "+ cfile.getFile().getName() + " is done");
+                if(!isLocked(cfile.getFile().toPath())) {
+                    try {
+                        File file = cfile.getFile();
+                        FileReader fr = new FileReader(file);
+                        BufferedReader br = new BufferedReader(fr);
+                        String line = "";
+                        String[] tempArr;
+                        while((line = br.readLine()) != null) {
+                            tempArr = line.split(",");
+                            for(String tempStr : tempArr) {
+                                System.out.print(tempStr + " ");
+                            }
+                            System.out.println();
+                        }
+                        br.close();
+                    } catch(IOException ioe) {
+                        ioe.printStackTrace();
+                    }
                 }
             }
         }
