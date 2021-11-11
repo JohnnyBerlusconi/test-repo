@@ -9,16 +9,15 @@ import org.springframework.boot.devtools.filewatch.ChangedFile;
 import org.springframework.boot.devtools.filewatch.ChangedFiles;
 import org.springframework.boot.devtools.filewatch.FileChangeListener;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 
 @Component
@@ -29,6 +28,8 @@ public class MyFileChangeListener implements FileChangeListener {
         ArrayList<CsvRecord> recordsList = new ArrayList<>();
         String accountNr = "";
         for(ChangedFiles cfiles : changeSet) {
+            ArrayList<File> excelFiles = extractExcelFiles(cfiles);
+            File csvFile = findNewestCsv();
             for(ChangedFile cfile: cfiles.getFiles()) {
                 if(!isLocked(cfile.getFile().toPath())) {
                     try {
@@ -83,6 +84,45 @@ public class MyFileChangeListener implements FileChangeListener {
             }
         }
 
+
+    }
+    private ArrayList<File> extractExcelFiles(ChangedFiles cfiles) {
+        System.out.println(cfiles);
+        ArrayList<File> result = new ArrayList<>();
+
+        for(ChangedFile cfile : cfiles.getFiles()) {
+            File file = cfile.getFile();
+            if (file.getPath().endsWith("xlsx")) {
+                result.add(file);
+            }
+        }
+        return result;
+    }
+
+    private File findNewestCsv() {
+        File fileList = new File("C:\\scratch");
+        File newestFile = null;
+        FileTime newestCreation = null;
+
+        if (!fileList.exists()) {
+            return null;
+        }
+        try {
+            for (File file : fileList.listFiles()) {
+                if (newestFile == null) {
+                    newestFile = file;
+                    newestCreation = (FileTime) Files.getAttribute(file.toPath(), "creationTime");
+                }
+                FileTime creationTime = (FileTime) Files.getAttribute(file.toPath(), "creationTime");
+                //TODO is this correct??
+                if (newestCreation.compareTo(creationTime) < 0) {
+                    newestFile = file;
+                }
+            }
+        } catch (IOException e) {
+            System.out.print("IO EXCEPTION LOOKING FOR CSV FILES");
+        }
+        return newestFile;
 
     }
 
