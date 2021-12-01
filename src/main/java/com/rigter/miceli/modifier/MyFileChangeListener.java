@@ -13,10 +13,8 @@ import org.springframework.stereotype.Component;
 import java.io.*;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.Set;
 
@@ -25,106 +23,94 @@ public class MyFileChangeListener implements FileChangeListener {
 
     @Override
     public void onChange(Set<ChangedFiles> changeSet) {
+
         ArrayList<CsvRecord> recordsList = new ArrayList<>();
-        String accountNr = "";
+
         for(ChangedFiles cfiles : changeSet) {
-            ArrayList<File> excelFiles = extractExcelFiles(cfiles);
-            File csvFile = findNewestCsv();
             for(ChangedFile cfile: cfiles.getFiles()) {
                 if(!isLocked(cfile.getFile().toPath())) {
                     try {
-
-                        //TODO file extension check
-                        //********* EXCEL READ ******************
-
-                        XSSFWorkbook workbook = new XSSFWorkbook(cfile.getFile());
-                        XSSFSheet worksheet = workbook.getSheetAt(2);
-                        for(int i=0;i<worksheet.getPhysicalNumberOfRows() ;i++) {
-
-                            XSSFRow row = worksheet.getRow(i);
-
-                            if (row != null && row.getCell(0) != null && row.getCell(0).getStringCellValue().equalsIgnoreCase("Konto-Nummer:")) {
-                                accountNr = row.getCell(1).getStringCellValue();
-                                System.out.println(accountNr);
-                            }
-                        }
-
+                        File file = cfile.getFile();
 
                         //****** CSV READ ************
-                        File file = cfile.getFile();
-                        FileReader fr = new FileReader(file);
-                        BufferedReader br = new BufferedReader(fr);
-                        String line = "";
-                        String[] tempArr;
-                        while((line = br.readLine()) != null) {
-                            tempArr = line.split(";");  //,,,,,,,,,,,,,,,,,,,,,,,
-                            if (tempArr.length == 0 || tempArr[0].equalsIgnoreCase("Transfer_Code")) {
-                                //this is the header line, do nothing
-                                continue;
-                            }
-                            recordsList.add(new CsvRecord(tempArr));
+                        if (file.getPath().endsWith("csv")) {
+                            recordsList = doBuildCsvRecord(file);
                         }
-                        System.out.print(recordsList);
-                        br.close();
+
+                        //********* EXCEL READ ******************
+                        if (file.getPath().endsWith("xlsx") || file.getPath().endsWith("xlx")) {
+                            doUpdateFromExcel(file, recordsList);
+                        }
                     } catch(IOException | InvalidFormatException ioe) {
                         ioe.printStackTrace();
                     }
-
-
                 }
             }
         }
-
-        // Logik mit überschreiben
-        for (CsvRecord record : recordsList) {
-            if (record.getAccount_From().equalsIgnoreCase(accountNr)) {
-                //
-                record.setAmount("10000000000000000000000");
-                System.out.println("FOUND ACCOUNT!!!!!!!!!!!!!!!!!!!!");
-            }
-        }
-
-
     }
-    private ArrayList<File> extractExcelFiles(ChangedFiles cfiles) {
-        System.out.println(cfiles);
-        ArrayList<File> result = new ArrayList<>();
 
-        for(ChangedFile cfile : cfiles.getFiles()) {
-            File file = cfile.getFile();
-            if (file.getPath().endsWith("xlsx")) {
-                result.add(file);
+    private ArrayList<CsvRecord> doBuildCsvRecord(File file) throws IOException {
+        ArrayList<CsvRecord> result = new ArrayList<>();
+        FileReader fr = new FileReader(file);
+        BufferedReader br = new BufferedReader(fr);
+        String line = "";
+        String[] tempArr;
+        while((line = br.readLine()) != null) {
+            tempArr = line.split(";");  //,,,,,,,,,,,,,,,,,,,,,,,
+            if (tempArr.length == 0 || tempArr[0].equalsIgnoreCase("Transfer_Code")) {
+                //this is the header line, do nothing
+                continue;
             }
+            result.add(new CsvRecord(tempArr));
         }
+        br.close();
         return result;
     }
 
-    private File findNewestCsv() {
-        File fileList = new File("C:\\scratch");
-        File newestFile = null;
-        FileTime newestCreation = null;
+    private void doUpdateFromExcel(File file, ArrayList<CsvRecord> csvRecords) throws IOException, InvalidFormatException {
+        String accountNr = "";
 
-        if (!fileList.exists()) {
-            return null;
-        }
-        try {
-            for (File file : fileList.listFiles()) {
-                if (newestFile == null) {
-                    newestFile = file;
-                    newestCreation = (FileTime) Files.getAttribute(file.toPath(), "creationTime");
-                }
-                FileTime creationTime = (FileTime) Files.getAttribute(file.toPath(), "creationTime");
-                //TODO is this correct??
-                if (newestCreation.compareTo(creationTime) < 0) {
-                    newestFile = file;
-                }
+        XSSFWorkbook workbook = new XSSFWorkbook(file);
+        XSSFSheet worksheet = workbook.getSheetAt(2);
+        for(int i=0;i<worksheet.getPhysicalNumberOfRows() ;i++) {
+
+            XSSFRow row = worksheet.getRow(i);
+
+            if (row != null && row.getCell(0) != null && row.getCell(0).getStringCellValue().equalsIgnoreCase("Konto-Nummer:")) {
+                accountNr = row.getCell(1).getStringCellValue();
+                System.out.println(accountNr);
+                accountNr = doCleanAccountNr(accountNr);
             }
-        } catch (IOException e) {
-            System.out.print("IO EXCEPTION LOOKING FOR CSV FILES");
-        }
-        return newestFile;
 
+            if (row != null && row.getCell(0) != null && row.getCell(0).getStringCellValue().equalsIgnoreCase("Konto-Nummer:")) {
+                accountNr = row.getCell(1).getStringCellValue();
+                System.out.println(accountNr);
+                accountNr = doCleanAccountNr(accountNr);
+            }
+
+
+        }
+
+        // Logik mit überschreiben
+        for (CsvRecord record : csvRecords) {
+            if (record.getAccount_From().equalsIgnoreCase(accountNr)) {
+                //
+                record.setAmount("100");
+                System.out.println("FOUND ACCOUNT!!!!!!!!!!!!!!!!!!!!");
+            }
+        }
     }
+
+    private String doCleanAccountNr(String accountNr) {
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < accountNr.length(); i++) {
+            if (!(accountNr.charAt(i) == '.')) {
+                result.append(accountNr.charAt(i));
+            }
+        }
+        return result.toString();
+    }
+
 
     private boolean isLocked(Path path) {
         try (FileChannel ch = FileChannel.open(path, StandardOpenOption.WRITE); FileLock lock = ch.tryLock()) {
