@@ -1,5 +1,4 @@
 
 
-1. Amount aus Excel File auslesen
-2. Amout ins CSV File schreiben anhand von Avis_Text
-3. CSV File überschreiben
+1. Amount aus Excel File auslesen --done
+2. CSV File erstellen und ersetzen --offen

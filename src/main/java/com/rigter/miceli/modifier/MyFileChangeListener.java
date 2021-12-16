@@ -9,13 +9,16 @@ import org.springframework.boot.devtools.filewatch.ChangedFile;
 import org.springframework.boot.devtools.filewatch.ChangedFiles;
 import org.springframework.boot.devtools.filewatch.FileChangeListener;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.io.*;
+import java.lang.reflect.Array;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Set;
 
 @Component
@@ -71,32 +74,42 @@ public class MyFileChangeListener implements FileChangeListener {
         String accountNr = "";
 
         XSSFWorkbook workbook = new XSSFWorkbook(file);
-        XSSFSheet worksheet = workbook.getSheetAt(2);
-        for(int i=0;i<worksheet.getPhysicalNumberOfRows() ;i++) {
+        int sheetAmount = workbook.getNumberOfSheets();
 
-            XSSFRow row = worksheet.getRow(i);
+        for (int i = 0; i < sheetAmount; i++) {
+            XSSFSheet worksheet = workbook.getSheetAt(i);
+            if (worksheet.getSheetName().startsWith("Zahlungsauftrag")) {
 
-            if (row != null && row.getCell(0) != null && row.getCell(0).getStringCellValue().equalsIgnoreCase("Konto-Nummer:")) {
-                accountNr = row.getCell(1).getStringCellValue();
-                System.out.println(accountNr);
-                accountNr = doCleanAccountNr(accountNr);
-            }
+                ArrayList<String> amounts = new ArrayList<>();
 
-            if (row != null && row.getCell(0) != null && row.getCell(0).getStringCellValue().equalsIgnoreCase("Konto-Nummer:")) {
-                accountNr = row.getCell(1).getStringCellValue();
-                System.out.println(accountNr);
-                accountNr = doCleanAccountNr(accountNr);
-            }
+                for(int j=0;j<worksheet.getLastRowNum() ;j++) {
 
+                    XSSFRow row = worksheet.getRow(j);
 
-        }
+                    if (row != null && row.getCell(0) != null && row.getCell(0).getStringCellValue().equalsIgnoreCase("Konto-Nummer:")) {
+                        accountNr = row.getCell(1).getStringCellValue();
+                        System.out.println("Account Nr " + accountNr + " found:");
+                        accountNr = doCleanAccountNr(accountNr);
+                    }
+                    if (row != null && row.getCell(7) != null && StringUtils.hasText(String.valueOf(row.getCell(7).getNumericCellValue()))) {
+                        amounts.add(String.valueOf(row.getCell(7).getNumericCellValue()));
+                    }
+                }
 
-        // Logik mit überschreiben
-        for (CsvRecord record : csvRecords) {
-            if (record.getAccount_From().equalsIgnoreCase(accountNr)) {
-                //
-                record.setAmount("100");
-                System.out.println("FOUND ACCOUNT!!!!!!!!!!!!!!!!!!!!");
+                // Logik mit überschreiben
+                for (CsvRecord record : csvRecords) {
+                    if (record.getAccount_From().equalsIgnoreCase(accountNr)) {
+                        if (amounts.size() > 0) {
+                            String amount = amounts.get(0);
+                            record.setAmount(amount);
+                            System.out.println("Updated Transaction '" + record.getAvis_Text() + "' with Amount: " + amount);
+                            amounts.remove(0);
+                        }
+                    }
+                }
+
+            } else {
+                //do nothing
             }
         }
     }
