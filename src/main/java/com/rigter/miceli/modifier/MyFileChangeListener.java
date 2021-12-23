@@ -24,10 +24,22 @@ import java.util.Set;
 @Component
 public class MyFileChangeListener implements FileChangeListener {
 
+    private static final String CSV_FILE_NAME = "C:\\scratch\\file1";
+
     @Override
     public void onChange(Set<ChangedFiles> changeSet) {
 
         ArrayList<CsvRecord> recordsList = new ArrayList<>();
+        //****** CSV READ ************
+        File csvFile = new File(CSV_FILE_NAME);
+        if (csvFile.getPath().endsWith("csv")) {
+            try {
+                recordsList = doBuildCsvRecord(csvFile);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
 
         for(ChangedFiles cfiles : changeSet) {
             for(ChangedFile cfile: cfiles.getFiles()) {
@@ -35,15 +47,15 @@ public class MyFileChangeListener implements FileChangeListener {
                     try {
                         File file = cfile.getFile();
 
-                        //****** CSV READ ************
-                        if (file.getPath().endsWith("csv")) {
-                            recordsList = doBuildCsvRecord(file);
-                        }
-
                         //********* EXCEL READ ******************
                         if (file.getPath().endsWith("xlsx") || file.getPath().endsWith("xlx")) {
                             doUpdateFromExcel(file, recordsList);
                         }
+
+                        //*********** WRITE TO FILE *****************
+
+                        createCsv(recordsList);
+
                     } catch(IOException | InvalidFormatException ioe) {
                         ioe.printStackTrace();
                     }
@@ -60,11 +72,12 @@ public class MyFileChangeListener implements FileChangeListener {
         String[] tempArr;
         while((line = br.readLine()) != null) {
             tempArr = line.split(";");  //,,,,,,,,,,,,,,,,,,,,,,,
-            if (tempArr.length == 0 || tempArr[0].equalsIgnoreCase("Transfer_Code")) {
-                //this is the header line, do nothing
-                continue;
+            if (tempArr.length == 0 ) {
+                String[] empty = {"", "", "", "", "", "", "", "", "", "", "", "", "", ""};
+                result.add(new CsvRecord(empty));
+            } else {
+                result.add(new CsvRecord(tempArr));
             }
-            result.add(new CsvRecord(tempArr));
         }
         br.close();
         return result;
@@ -112,6 +125,17 @@ public class MyFileChangeListener implements FileChangeListener {
                 //do nothing
             }
         }
+    }
+
+    private void createCsv(ArrayList<CsvRecord> records) throws IOException {
+        FileWriter writer = new FileWriter(CSV_FILE_NAME);
+
+        for (CsvRecord record : records) {
+            writer.append(record.toString());
+            writer.append("\n");
+        }
+        writer.flush();
+        writer.close();
     }
 
     private String doCleanAccountNr(String accountNr) {

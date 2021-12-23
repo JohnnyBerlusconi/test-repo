@@ -36,6 +36,38 @@ public class CsvRecord {
         this.Avis_Text = fields[12];
         this.Month = fields[13];
     }
+    
+    public String toString() {
+        String result = Transfer_Code;
+        result += ";";
+        result += Container_From;
+        result += ";";
+        result += Account_From;
+        result += ";";
+        result += Currency;
+        result += ";";
+        result += Amount;
+        result += ";";
+        result += Containter_To;
+        result += ";";
+        result += Account_To;
+        result += ";";
+        result += Beneficiary_IBAN_Account;
+        result += ";";
+        result += Beneficiary_Account;
+        result += ";";
+        result += Beneficiary;
+        result += ";";
+        result += Destination_Bank;
+        result += ";";
+        result += Value_Date;
+        result += ";";
+        result += Avis_Text;
+        result += ";";
+        result += Month;
+        return result;
+    }
+    
 
     public String getTransfer_Code() {
         return Transfer_Code;
