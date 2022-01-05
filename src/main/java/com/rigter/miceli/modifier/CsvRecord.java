@@ -19,6 +19,8 @@ public class CsvRecord {
     private String  Value_Date;
     private String  Avis_Text;
     private String  Month;
+
+    private boolean locked = false;
     
     public CsvRecord (String[] fields) {
         this.Transfer_Code = fields[0];
@@ -179,5 +181,12 @@ public class CsvRecord {
 
     public void setMonth(String month) {
         Month = month;
+    }
+
+    public boolean isLocked()  {
+        return this.locked;
+    }
+    public void lock()   {
+        this.locked = true;
     }
 }

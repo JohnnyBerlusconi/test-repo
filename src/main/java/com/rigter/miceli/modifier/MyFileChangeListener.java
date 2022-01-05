@@ -12,40 +12,34 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.io.*;
-import java.lang.reflect.Array;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Set;
 
 @Component
 public class MyFileChangeListener implements FileChangeListener {
 
-    private static final String CSV_FILE_NAME = "C:\\scratch\\file1";
+    private static final String CSV_FILE_NAME = "C:\\scratch\\file1.csv";
 
     @Override
     public void onChange(Set<ChangedFiles> changeSet) {
 
         ArrayList<CsvRecord> recordsList = new ArrayList<>();
-        //****** CSV READ ************
-        File csvFile = new File(CSV_FILE_NAME);
-        if (csvFile.getPath().endsWith("csv")) {
-            try {
-                recordsList = doBuildCsvRecord(csvFile);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
 
         for(ChangedFiles cfiles : changeSet) {
             for(ChangedFile cfile: cfiles.getFiles()) {
                 if(!isLocked(cfile.getFile().toPath())) {
                     try {
                         File file = cfile.getFile();
+
+                        //********* CSV READ ******************
+
+                        if (file.getPath().endsWith("csv")) {
+                                recordsList = doBuildCsvRecord(file);
+                        }
 
                         //********* EXCEL READ ******************
                         if (file.getPath().endsWith("xlsx") || file.getPath().endsWith("xlx")) {
@@ -101,7 +95,7 @@ public class MyFileChangeListener implements FileChangeListener {
 
                     if (row != null && row.getCell(0) != null && row.getCell(0).getStringCellValue().equalsIgnoreCase("Konto-Nummer:")) {
                         accountNr = row.getCell(1).getStringCellValue();
-                        System.out.println("Account Nr " + accountNr + " found:");
+                        System.out.println("Account Nr " + accountNr + " found");
                         accountNr = doCleanAccountNr(accountNr);
                     }
                     if (row != null && row.getCell(7) != null && StringUtils.hasText(String.valueOf(row.getCell(7).getNumericCellValue()))) {
@@ -111,12 +105,13 @@ public class MyFileChangeListener implements FileChangeListener {
 
                 // Logik mit überschreiben
                 for (CsvRecord record : csvRecords) {
-                    if (record.getAccount_From().equalsIgnoreCase(accountNr)) {
+                    if (record.getAccount_From().equalsIgnoreCase(accountNr) && !record.isLocked()) {
                         if (amounts.size() > 0) {
                             String amount = amounts.get(0);
                             record.setAmount(amount);
                             System.out.println("Updated Transaction '" + record.getAvis_Text() + "' with Amount: " + amount);
                             amounts.remove(0);
+                            record.lock();
                         }
                     }
                 }
@@ -128,7 +123,9 @@ public class MyFileChangeListener implements FileChangeListener {
     }
 
     private void createCsv(ArrayList<CsvRecord> records) throws IOException {
-        FileWriter writer = new FileWriter(CSV_FILE_NAME);
+        File result = new File(CSV_FILE_NAME);
+
+        FileWriter writer = new FileWriter(result);
 
         for (CsvRecord record : records) {
             writer.append(record.toString());
