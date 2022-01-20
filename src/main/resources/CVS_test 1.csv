@@ -8,7 +8,7 @@ xfer;777777;88888;CHF;0;322.20.115;;;;;;30.06.2021;Depotbankvergütung  ;Jun 21
 xfer;777777;6666666;CHF;0;2503334000;2503330001;;;;;30.06.2021;wydler global income fund;Jun 21
 pay_dom;777777;777777;CHF;0;;;CH50004545455555;;Hanspeter AG ;;30.06.2021;Asset Manager ;Jun 21
 ;;;;;;;;;;;;;
-xfer;1234000;1234;CHF;1;322.20.115;;;;;;30.06.2021;Depotbankgebühr ;Jun 21
-xfer;1234000;1234;CHF;1;2503334000;2503330001;;;;;30.06.2021;Fondsleitungsgebühr ;Jun 21
-xfer;1234000;1234;CHF;1;322.30.225;;;;;;30.06.2021;Asset Manager Gebühr ;Jun 21
-xfer;1234000;1234;CHF;1;322.30.225;;;;;;30.06.2021;Asset Manager Gebühr;Jun 21
+xfer;1234000;1234;CHF;0;322.20.115;;;;;;30.06.2021;Depotbankgebühr ;Jun 21
+xfer;1234000;1234;CHF;0;2503334000;2503330001;;;;;30.06.2021;Fondsleitungsgebühr ;Jun 21
+xfer;1234000;1234;CHF;0;322.30.225;;;;;;30.06.2021;Asset Manager Gebühr ;Jun 21
+xfer;1234000;1234;CHF;0;322.30.225;;;;;;30.06.2021;Asset Manager Gebühr;Jun 21
